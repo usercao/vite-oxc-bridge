@@ -17,7 +17,7 @@ jobs:
     if: github.repository == 'usercao/vite-oxc-bridge'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
 
@@ -29,7 +29,7 @@ jobs:
       - run: corepack enable
       - id: yarn-cache-dir
         run: echo "dir=$(yarn config get cacheFolder)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ${{ steps.yarn-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
@@ -44,7 +44,12 @@ jobs:
             import { readFile } from "node:fs/promises"
 
             const packageJson = JSON.parse(await readFile("package.json", "utf8"))
-            const dependencies = Object.keys(packageJson.dependencies ?? {})
+            const dependencies = [
+              ...new Set([
+                ...Object.keys(packageJson.dependencies ?? {}),
+                ...Object.keys(packageJson.devDependencies ?? {}),
+              ]),
+            ]
             if (dependencies.length === 0) {
               process.exit(0)
             }
@@ -60,11 +65,11 @@ jobs:
         run: |
           if git diff --quiet -- package.json yarn.lock; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No production dependency updates are available." >> "$GITHUB_STEP_SUMMARY"
+            echo "No dependency updates are available." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
-          echo "Production dependency updates are available." >> "$GITHUB_STEP_SUMMARY"
+          echo "Dependency updates are available." >> "$GITHUB_STEP_SUMMARY"
 
       - if: steps.changes.outputs.changed == 'true'
         run: yarn format
