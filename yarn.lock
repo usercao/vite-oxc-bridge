@@ -1519,9 +1519,9 @@ __metadata:
   peerDependencies:
     vite: ">=8.0.0"
   bin:
+    oxc: dist/cli.js
     oxfmt: bin/oxfmt.js
     oxlint: bin/oxlint.js
-    vite-oxc-bridge: dist/cli.js
   languageName: unknown
   linkType: soft
 
