@@ -44,10 +44,11 @@ describe('Oxc tool integration', () => {
     expect(packageManifest.peerDependencies).not.toHaveProperty('oxfmt')
     expect(packageManifest.peerDependencies).not.toHaveProperty('oxlint')
     expect(packageManifest.bin).toMatchObject({
-      'vite-oxc-bridge': 'dist/cli.js',
+      oxc: 'dist/cli.js',
       oxfmt: 'bin/oxfmt.js',
       oxlint: 'bin/oxlint.js',
     })
+    expect(packageManifest.bin).not.toHaveProperty('vite-oxc-bridge')
   })
 
   test('sets the Vite+ and type-aware environment for Oxlint', async () => {
@@ -70,7 +71,7 @@ describe('Oxc tool integration', () => {
 
       expect(result.exitCode).toBe(1)
       expect(result.stderr).toContain(`This ${tool} wrapper is for IDE extension use only.`)
-      expect(result.stderr).toContain(`vite-oxc-bridge ${tool === 'oxfmt' ? 'fmt' : 'lint'}`)
+      expect(result.stderr).toContain(`oxc ${tool === 'oxfmt' ? 'fmt' : 'lint'}`)
       expect(result.stderr).toContain(`To ${action} your code`)
     }
   })

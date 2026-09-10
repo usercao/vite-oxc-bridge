@@ -23,9 +23,9 @@
     "url": "git+https://github.com/usercao/vite-oxc-bridge.git"
   },
   "bin": {
+    "oxc": "dist/cli.js",
     "oxfmt": "bin/oxfmt.js",
-    "oxlint": "bin/oxlint.js",
-    "vite-oxc-bridge": "dist/cli.js"
+    "oxlint": "bin/oxlint.js"
   },
   "files": [
     "bin",

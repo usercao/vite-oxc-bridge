@@ -27,10 +27,10 @@ export default defineConfig({
 ```json
 {
   "scripts": {
-    "format": "vite-oxc-bridge fmt .",
-    "format:check": "vite-oxc-bridge fmt --check .",
-    "lint": "vite-oxc-bridge lint .",
-    "lint:fix": "vite-oxc-bridge lint --fix ."
+    "format": "oxc fmt .",
+    "format:check": "oxc fmt --check .",
+    "lint": "oxc lint .",
+    "lint:fix": "oxc lint --fix ."
   }
 }
 ```
@@ -40,7 +40,7 @@ export default defineConfig({
 Install the [Oxc extension](https://marketplace.visualstudio.com/items?itemName=oxc.oxc-vscode), then run:
 
 ```sh
-npx vite-oxc-bridge init
+npx --no-install oxc init
 ```
 
 This creates or merges Vite+-compatible settings in `.vscode/settings.json` without replacing existing values or JSONC comments. The extension discovers the package wrappers automatically; do not set `oxc.path.oxfmt` or `oxc.path.oxlint`.
