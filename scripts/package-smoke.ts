@@ -31,6 +31,7 @@ function runCommand(
     const child = spawn(command, args, {
       cwd,
       env: environment,
+      shell: command.endsWith('.cmd'),
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     let stdout = ''
