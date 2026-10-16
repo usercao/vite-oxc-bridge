@@ -16,6 +16,7 @@ interface LspMessage {
 }
 
 type OxcTool = 'oxfmt' | 'oxlint'
+type PackageBin = 'oxc' | OxcTool
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
@@ -28,10 +29,12 @@ function runCommand(
   environment: NodeJS.ProcessEnv = process.env,
 ): Promise<CommandOutput> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    const usesCommandShim = command.endsWith('.cmd')
+    const executable = usesCommandShim ? (process.env.ComSpec ?? 'cmd.exe') : command
+    const executableArgs = usesCommandShim ? ['/d', '/s', '/c', command, ...args] : args
+    const child = spawn(executable, executableArgs, {
       cwd,
       env: environment,
-      shell: command.endsWith('.cmd'),
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     let stdout = ''
@@ -67,20 +70,25 @@ function packageEnvironment(projectDirectory: string): NodeJS.ProcessEnv {
 }
 
 function spawnPackageBin(
-  name: string,
+  name: PackageBin,
   args: string[],
   projectDirectory: string,
 ): ChildProcessWithoutNullStreams {
-  return spawn(name, args, {
+  const entryPath = path.join(
+    projectDirectory,
+    'node_modules',
+    'vite-oxc-bridge',
+    name === 'oxc' ? 'dist/cli.js' : `bin/${name}.js`,
+  )
+  return spawn(process.execPath, [entryPath, ...args], {
     cwd: projectDirectory,
     env: packageEnvironment(projectDirectory),
-    shell: process.platform === 'win32',
     stdio: ['pipe', 'pipe', 'pipe'],
   })
 }
 
 async function runPackageBin(
-  name: string,
+  name: PackageBin,
   args: string[],
   projectDirectory: string,
 ): Promise<CommandOutput> {
@@ -143,7 +151,11 @@ async function initializeLanguageServer(tool: OxcTool, projectDirectory: string)
 
       child.once('error', finish)
       child.once('close', (exitCode) => {
-        finish(new Error(`Installed ${tool} LSP exited with code ${exitCode}\n${stderr}`))
+        if (exitCode === 0) {
+          finish()
+        } else {
+          finish(new Error(`Installed ${tool} LSP exited with code ${exitCode}\n${stderr}`))
+        }
       })
       child.stdout.on('data', (chunk: Buffer) => {
         buffer = Buffer.concat([buffer, chunk])
@@ -172,13 +184,23 @@ async function initializeLanguageServer(tool: OxcTool, projectDirectory: string)
             child.stdin.write(encodeLspMessage({ id: message.id, jsonrpc: '2.0', result: null }))
             continue
           }
+          if (message.id === 2) {
+            if (message.error) {
+              finish(new Error(message.error.message ?? `Installed ${tool} LSP shutdown failed`))
+            } else {
+              child.stdin.write(encodeLspMessage({ jsonrpc: '2.0', method: 'exit' }))
+            }
+            return
+          }
           if (message.id !== 1) {
             continue
           }
           if (message.error) {
             finish(new Error(message.error.message ?? `Installed ${tool} LSP initialize failed`))
           } else {
-            finish()
+            child.stdin.write(
+              encodeLspMessage({ id: 2, jsonrpc: '2.0', method: 'shutdown', params: null }),
+            )
           }
           return
         }
