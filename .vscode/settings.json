@@ -3,7 +3,7 @@
   "prettier.enable": false,
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.detectIndentation": false,
-  "editor.formatOnSave": false,
+  "editor.formatOnSave": true,
   "editor.insertSpaces": true,
   "editor.rulers": [100],
   "editor.tabSize": 2,
