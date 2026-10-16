@@ -21,9 +21,9 @@ interface PendingRequest {
 }
 
 interface LspSession {
-  close(): void
+  close(): Promise<void>
   notify(method: string, params: object): void
-  request(method: string, params: object): Promise<unknown>
+  request(method: string, params: unknown): Promise<unknown>
 }
 
 function encodeMessage(message: object): string {
@@ -42,6 +42,9 @@ function startLspSession(tool: 'oxfmt' | 'oxlint', cwd: string): LspSession {
   let closed = false
   let nextRequestId = 1
   let stderr = ''
+  const childClosed = new Promise<void>((resolve) => {
+    child.once('close', () => resolve())
+  })
 
   function failPendingRequests(error: Error): void {
     for (const pendingRequest of pendingRequests.values()) {
@@ -62,6 +65,18 @@ function startLspSession(tool: 'oxfmt' | 'oxlint', cwd: string): LspSession {
 
   function send(message: object): void {
     child.stdin.write(encodeMessage(message))
+  }
+
+  function request(method: string, params: unknown): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      const id = nextRequestId++
+      const timeout = setTimeout(() => {
+        pendingRequests.delete(id)
+        reject(new Error(`Timed out waiting for ${tool} LSP ${method}\n${stderr}`))
+      }, 5_000)
+      pendingRequests.set(id, { reject, resolve, timeout })
+      send({ id, jsonrpc: '2.0', method, params })
+    })
   }
 
   child.stderr.setEncoding('utf8')
@@ -119,23 +134,25 @@ function startLspSession(tool: 'oxfmt' | 'oxlint', cwd: string): LspSession {
   })
 
   return {
-    close(): void {
-      fail(new Error(`${tool} LSP session closed`))
+    async close(): Promise<void> {
+      if (closed) {
+        await childClosed
+        return
+      }
+      try {
+        await request('shutdown', null)
+        send({ jsonrpc: '2.0', method: 'exit' })
+        await childClosed
+      } catch (error) {
+        fail(error instanceof Error ? error : new Error(String(error)))
+        await childClosed
+        throw error
+      }
     },
     notify(method: string, params: object): void {
       send({ jsonrpc: '2.0', method, params })
     },
-    request(method: string, params: object): Promise<unknown> {
-      return new Promise((resolve, reject) => {
-        const id = nextRequestId++
-        const timeout = setTimeout(() => {
-          pendingRequests.delete(id)
-          reject(new Error(`Timed out waiting for ${tool} LSP ${method}\n${stderr}`))
-        }, 5_000)
-        pendingRequests.set(id, { reject, resolve, timeout })
-        send({ id, jsonrpc: '2.0', method, params })
-      })
-    },
+    request,
   }
 }
 
@@ -168,7 +185,7 @@ async function formatWithLsp(configDirectory: string, sourcePath: string): Promi
       textDocument: { uri: sourceUri },
     })
   } finally {
-    session.close()
+    await session.close()
   }
 }
 
@@ -201,7 +218,7 @@ async function lintWithLsp(configDirectory: string, sourcePath: string): Promise
       textDocument: { uri: sourceUri },
     })
   } finally {
-    session.close()
+    await session.close()
   }
 }
 
