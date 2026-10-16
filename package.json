@@ -30,7 +30,6 @@
   "files": [
     "bin",
     "dist",
-    "src",
     "README.md"
   ],
   "type": "module",
@@ -50,15 +49,17 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "node --input-type=module --eval \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json",
-    "check": "yarn format:check && yarn lint && yarn test && yarn pack --dry-run",
+    "build": "node scripts/build.ts",
+    "check": "node scripts/check.ts",
     "format": "yarn exec oxfmt --write .",
     "format:check": "yarn exec oxfmt --check .",
     "lint": "yarn exec oxlint .",
     "lint:fix": "yarn exec oxlint --fix .",
     "prepack": "yarn build",
     "prepublishOnly": "yarn test",
-    "test": "tsc -p tsconfig.json && tsc -p tsconfig.test.json --noEmit && vitest run"
+    "test": "node scripts/test.ts",
+    "test:package": "node scripts/package-smoke.ts",
+    "test:windows": "node scripts/test-windows.ts"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1",
@@ -67,8 +68,9 @@
     "oxlint-tsgolint": "^7.0.2004"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
-    "typescript": "^7.0.2",
+    "@types/node": "^24.19.2",
+    "tsdown": "^0.23.1",
+    "typescript": "^6.0.3",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"
   },

@@ -12,6 +12,7 @@ const require = createRequire(import.meta.url)
 const packageManifest = require('../package.json') as {
   bin: Record<string, string>
   dependencies: Record<string, string>
+  files: string[]
   name: string
   peerDependencies: Record<string, string>
   version: string
@@ -49,6 +50,10 @@ describe('Oxc tool integration', () => {
       oxlint: 'bin/oxlint.js',
     })
     expect(packageManifest.bin).not.toHaveProperty('vite-oxc-bridge')
+  })
+
+  test('publishes built artifacts without internal source files', () => {
+    expect(packageManifest.files).toEqual(['bin', 'dist', 'README.md'])
   })
 
   test('sets the Vite+ and type-aware environment for Oxlint', async () => {

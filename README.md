@@ -49,11 +49,13 @@ This creates or merges Vite+-compatible settings in `.vscode/settings.json` with
 
 Oxc finds `vite.config.*`, then calls the Vite+ config-loader protocol. Vite Oxc Bridge supplies that protocol and returns the nearest `oxc.config.*` unchanged. Vite and its plugins are not started.
 
+The root `oxc.config.*` file is reloaded when Oxc requests it. Node.js caches modules imported by that file for the lifetime of the process, so restart the Oxc language servers after changing imported configuration helpers.
+
 ## Requirements
 
 - Node.js 24.22.0 or later
 - Vite 8 or later
-- An `oxc.config.*` file that default-exports an object
+- An `oxc.config.ts`, `.mts`, `.cts`, `.js`, `.mjs`, or `.cjs` file that default-exports an object
 
 ## License
 
