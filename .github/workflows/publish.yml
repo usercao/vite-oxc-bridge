@@ -48,4 +48,7 @@ jobs:
             exit 1
           fi
       - run: yarn check
-      - run: npm publish
+      - name: Publish package
+        env:
+          NPM_TAG: ${{ github.event.release.prerelease && 'next' || 'latest' }}
+        run: npm publish --tag "$NPM_TAG"

@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process'
+import { runCommands } from './run-commands.ts'
 
 const yarnCommand = process.platform === 'win32' ? 'yarn.cmd' : 'yarn'
 const steps = [
@@ -7,12 +7,4 @@ const steps = [
   ['exec', 'vitest', 'run'],
 ] as const
 
-for (const args of steps) {
-  const result = spawnSync(yarnCommand, args, {
-    shell: process.platform === 'win32',
-    stdio: 'inherit',
-  })
-  if (result.status !== 0) {
-    process.exit(result.status ?? 1)
-  }
-}
+process.exitCode = runCommands(yarnCommand, steps)

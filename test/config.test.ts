@@ -1,7 +1,15 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+
+const { accessMock } = vi.hoisted(() => ({ accessMock: vi.fn() }))
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  accessMock.mockImplementation(actual.access)
+  return { ...actual, access: accessMock }
+})
 
 import { findConfig, loadConfig } from '../src/config.js'
 import { resolveConfig as resolveVitePlusConfig } from '../src/vite-plus-shim.js'
@@ -73,13 +81,22 @@ describe('config discovery', () => {
     },
   )
 
-  test('reloads the root configuration in a long-running process', async () => {
-    const { configPath } = await createUnifiedFixture('export default { fmt: { semi: false } }\n')
+  test.each([
+    { extension: 'mjs', exportPrefix: 'export default ' },
+    { extension: 'cjs', exportPrefix: 'module.exports = ' },
+    { extension: 'cts', exportPrefix: 'module.exports = ' },
+  ])(
+    'reloads the root .$extension configuration in a long-running process',
+    async ({ extension, exportPrefix }) => {
+      const directory = await createTempDirectory(`vite-oxc-bridge-${extension}-reload-`)
+      const configPath = path.join(directory, `oxc.config.${extension}`)
+      await writeFile(configPath, `${exportPrefix}{ fmt: { semi: false } }\n`)
 
-    expect(await loadConfig(configPath)).toEqual({ fmt: { semi: false } })
-    await writeFile(configPath, 'export default { fmt: { semi: true } }\n')
-    expect(await loadConfig(configPath)).toEqual({ fmt: { semi: true } })
-  })
+      expect(await loadConfig(configPath)).toEqual({ fmt: { semi: false } })
+      await writeFile(configPath, `${exportPrefix}{ fmt: { semi: true } }\n`)
+      expect(await loadConfig(configPath)).toEqual({ fmt: { semi: true } })
+    },
+  )
 
   test('keeps imported configuration modules cached until process restart', async () => {
     const directory = await createTempDirectory('vite-oxc-bridge-import-cache-')
@@ -113,6 +130,14 @@ describe('config discovery', () => {
     const directory = await createTempDirectory('vite-oxc-bridge-no-config-')
 
     await expect(findConfig(directory)).rejects.toThrow(/No oxc\.config\.ts.*found from/)
+  })
+
+  test('preserves file system errors while discovering a configuration', async () => {
+    const directory = await createTempDirectory('vite-oxc-bridge-access-error-')
+    const error = Object.assign(new Error('permission denied'), { code: 'EACCES' })
+    accessMock.mockRejectedValueOnce(error)
+
+    await expect(findConfig(directory)).rejects.toBe(error)
   })
 
   test('preserves errors thrown while evaluating a configuration', async () => {

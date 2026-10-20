@@ -1,4 +1,5 @@
 import { access } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -13,12 +14,21 @@ const CONFIG_FILENAMES = [
   'oxc.config.cjs',
 ] as const
 
+const require = createRequire(import.meta.url)
+
 async function exists(filePath: string): Promise<boolean> {
   try {
     await access(filePath)
     return true
-  } catch {
-    return false
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error.code === 'ENOENT' || error.code === 'ENOTDIR')
+    ) {
+      return false
+    }
+    throw error
   }
 }
 
@@ -56,6 +66,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 export async function loadConfig(configPath: string): Promise<OxcConfig> {
   const absolutePath = path.resolve(configPath)
+  if (absolutePath.endsWith('.cjs') || absolutePath.endsWith('.cts')) {
+    delete require.cache[absolutePath]
+  }
   const moduleUrl = pathToFileURL(absolutePath)
   moduleUrl.searchParams.set('oxc-bridge-cache', `${Date.now()}-${Math.random()}`)
 
