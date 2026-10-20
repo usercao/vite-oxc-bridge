@@ -1,6 +1,6 @@
 {
   "name": "vite-oxc-bridge",
-  "version": "0.6.3",
+  "version": "0.7.6",
   "description": "Use Oxc's Vite+ config discovery with Vite, without Vite+",
   "keywords": [
     "config",
@@ -68,9 +68,9 @@
     "oxlint-tsgolint": "^7.0.2004"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@types/node": "^24",
     "tsdown": "^0.23.1",
-    "typescript": "^7.0.2",
+    "typescript": "^6",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"
   },

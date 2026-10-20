@@ -54,17 +54,10 @@ jobs:
               process.exit(0)
             }
 
-            const result = spawnSync("yarn", ["up", "--no-time-gate", ...dependencies], {
+            const result = spawnSync("yarn", ["up", "--recursive", ...dependencies], {
               stdio: "inherit",
             })
-            if (result.status !== 0) {
-              process.exit(result.status ?? 1)
-            }
-
-            const lockfileResult = spawnSync("yarn", ["up", "--recursive", ...dependencies], {
-              stdio: "inherit",
-            })
-            process.exit(lockfileResult.status ?? 1)
+            process.exit(result.status ?? 1)
           '
 
       - name: Stop if no dependency changes
