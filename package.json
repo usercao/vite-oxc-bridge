@@ -1,7 +1,7 @@
 {
   "name": "vite-oxc-bridge",
   "version": "0.7.6",
-  "description": "Use Oxc's Vite+ config discovery with Vite, without Vite+",
+  "description": "Configure Oxfmt and Oxlint from one typed config in Vite projects",
   "keywords": [
     "config",
     "formatter",
