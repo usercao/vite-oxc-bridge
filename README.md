@@ -7,8 +7,8 @@ under `fmt` and `lint` in a single configuration:
 
 | Unified config | Replaces         | Used by |
 | -------------- | ---------------- | ------- |
-| `fmt`          | `.oxfmtrc.json`  | Oxfmt   |
 | `lint`         | `.oxlintrc.json` | Oxlint  |
+| `fmt`          | `.oxfmtrc.json`  | Oxfmt   |
 
 ## Install
 
@@ -27,13 +27,10 @@ import { defineConfig } from 'vite-oxc-bridge'
 
 export default defineConfig({
   lint: {
-    rules: {
-      'no-debugger': 'deny',
-    },
+    // Add your Oxlint configuration here
   },
   fmt: {
-    semi: false,
-    singleQuote: true,
+    // Add your Oxfmt configuration here
   },
 })
 ```
