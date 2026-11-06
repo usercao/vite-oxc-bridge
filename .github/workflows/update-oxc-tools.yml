@@ -2,7 +2,7 @@ name: Update dependencies
 
 on:
   schedule:
-    - cron: '23 3 * * 2'
+    - cron: "23 3 * * 2"
   workflow_dispatch:
 
 permissions:
@@ -54,7 +54,7 @@ jobs:
               process.exit(0)
             }
 
-            const result = spawnSync("yarn", ["up", "--recursive", ...dependencies], {
+            const result = spawnSync("yarn", ["up", ...dependencies], {
               stdio: "inherit",
             })
             process.exit(result.status ?? 1)
